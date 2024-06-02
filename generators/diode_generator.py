@@ -9,6 +9,7 @@ from models.generator import Generator
 from models.keypoints import Keypoints
 from utils.get_error import get_error
 from utils.get_random_color import get_random_color
+from utils.plot_image import plot_image
 
 
 class DiodeDrawPoints(TypedDict):
@@ -150,30 +151,6 @@ class DiodeGenerator(Generator):
         kpts = self.get_keypoints(points)
 
         return img, kpts
-
-
-def plot_image(img: Image.Image, kpts: Keypoints):
-    W, H = img.size
-
-    ax: plt.Axes
-    _, ax = plt.subplots()
-
-    plt.imshow(img)
-
-    radius = 0.01 * min([W, H])
-    colors = {k: get_random_color() for k, v in kpts.items()}
-
-    for cls in kpts:
-        coords = tuple(kpts[cls])
-        color = colors[cls]
-
-        circle = plt.Circle(coords, radius, color=color)
-        ax.add_artist(circle)
-
-        t = ax.text(coords[0] + 4 * radius, coords[1] - 4 * radius, cls)
-        t.set_bbox({'facecolor': color, 'alpha': 1})
-
-    plt.show()
 
 
 if __name__ == '__main__':
