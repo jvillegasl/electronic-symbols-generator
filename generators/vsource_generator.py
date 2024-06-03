@@ -174,7 +174,6 @@ class VSourceGenerator(Generator):
         draw = ImageDraw.Draw(img)
 
         p = params['points']
-        m = params['magnitudes']
 
         draw.line([tuple(p['p0']), tuple(p['p1'])],
                   fill=(255, 255, 255), width=0)
