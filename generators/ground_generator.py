@@ -38,17 +38,15 @@ class GroundDrawParams(TypedDict):
 
 
 class GroundGenerator(Generator):
-    step: int = 50
-
-    def get_draw_params(self) -> GroundDrawParams:
+    def _get_draw_params(self) -> GroundDrawParams:
         D = self.step
 
-        d01 = 2*D
-        d12 = int(0.5*D)
+        d01 = 4*D
+        d12 = int(1*D)
         d23 = d12
-        d1 = 3*D
-        d2 = 2*D
-        d3 = D
+        d1 = 6*D
+        d2 = 4*D
+        d3 = 2*D
 
         p0 = np.array([0, 0], dtype=np.int_)
 
@@ -137,7 +135,7 @@ class GroundGenerator(Generator):
 
         return params
 
-    def draw_image(self, params: GroundDrawParams):
+    def _draw_image(self, params: GroundDrawParams):
         img = Image.new(mode='RGB', size=params['size'])
 
         draw = ImageDraw.Draw(img)
@@ -145,7 +143,7 @@ class GroundGenerator(Generator):
         p = params['points']
 
         draw.line([tuple(p['p0']), tuple(p['p1'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
 
         p1_0 = tuple(p['p1_0'])
         p1_1 = tuple(p['p1_1'])
@@ -154,13 +152,13 @@ class GroundGenerator(Generator):
         p3_0 = tuple(p['p3_0'])
         p3_1 = tuple(p['p3_1'])
 
-        draw.line([p1_0, p1_1], fill=(255, 255, 255), width=0)
-        draw.line([p2_0, p2_1], fill=(255, 255, 255), width=0)
-        draw.line([p3_0, p3_1], fill=(255, 255, 255), width=0)
+        draw.line([p1_0, p1_1], fill=(255, 255, 255), width=self.draw_width)
+        draw.line([p2_0, p2_1], fill=(255, 255, 255), width=self.draw_width)
+        draw.line([p3_0, p3_1], fill=(255, 255, 255), width=self.draw_width)
 
         return img
 
-    def get_keypoints(self, params: GroundDrawParams):
+    def _get_keypoints(self, params: GroundDrawParams):
         p = params['points']
 
         kpts = {
@@ -168,15 +166,6 @@ class GroundGenerator(Generator):
         }
 
         return kpts
-
-    def generate(self) -> tuple[PImage, Keypoints]:
-        params = self.get_draw_params()
-
-        img = self.draw_image(params)
-
-        kpts = self.get_keypoints(params)
-
-        return img, kpts
 
 
 if __name__ == '__main__':

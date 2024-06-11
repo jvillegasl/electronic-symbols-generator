@@ -6,9 +6,7 @@ import numpy.typing as npt
 import matplotlib.pylab as plt
 
 from models.generator import Generator
-from models.keypoints import Keypoints
 from utils.get_error import get_error
-from utils.get_random_color import get_random_color
 from utils.plot_image import plot_image
 
 
@@ -23,6 +21,11 @@ class DiodeDrawPoints(TypedDict):
     p7: npt.NDArray[np.int_]
 
 
+class DiodeDrawParams(TypedDict):
+    points: DiodeDrawPoints
+    size: tuple[int, int]
+
+
 class DiodeGenerator(Generator):
     """
                 p2           p5
@@ -35,9 +38,8 @@ class DiodeGenerator(Generator):
                 |   -        |
                 p3           p6
     """
-    step: int = 50
 
-    def get_draw_points(self) -> tuple[DiodeDrawPoints, tuple[int, int]]:
+    def _get_draw_params(self) -> DiodeDrawParams:
         D = self.step
 
         d01 = 5*D
@@ -108,31 +110,41 @@ class DiodeGenerator(Generator):
             points[key] -= [0, min_y]
             points[key] += [padding['left'], padding['top']]
 
-        return points, (W, H)
+        params: DiodeDrawParams = {
+            'points': points,
+            'size': (W, H)
+        }
 
-    def draw_image(self, points: DiodeDrawPoints, size: tuple[int, int]):
+        return params
+
+    def _draw_image(self, params: DiodeDrawParams):
+        points = params['points']
+        size = params['size']
+
         img = Image.new(mode='RGB', size=size)
 
         draw = ImageDraw.Draw(img)
         draw.line([tuple(points['p0']), tuple(points['p1'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
 
         draw.line([tuple(points['p2']), tuple(points['p3'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
         draw.line([tuple(points['p2']), tuple(points['p4'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
         draw.line([tuple(points['p3']), tuple(points['p4'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
 
         draw.line([tuple(points['p5']), tuple(points['p6'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
         draw.line([tuple(points['p4']), tuple(points['p7'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
 
         return img
 
-    def get_keypoints(self, points: DiodeDrawPoints):
+    def _get_keypoints(self, params: DiodeDrawParams):
         D = self.step
+
+        points = params['points']
 
         anode = points['p1'] + \
             [int(D * get_error(0.15)), int(D * get_error(0.15))]
@@ -142,15 +154,6 @@ class DiodeGenerator(Generator):
         kpts = {'anode': anode, 'catode': catode}
 
         return kpts
-
-    def generate(self):
-        points, size = self.get_draw_points()
-
-        img = self.draw_image(points, size)
-
-        kpts = self.get_keypoints(points)
-
-        return img, kpts
 
 
 if __name__ == '__main__':

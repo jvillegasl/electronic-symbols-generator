@@ -5,9 +5,11 @@ from PIL.ImageDraw import ImageDraw as PImageDraw
 from PIL import Image, ImageDraw
 import numpy as np
 import numpy.typing as npt
+import matplotlib.pyplot as plt
 
 from models.generator import Generator
 from models.keypoints import Keypoints
+from utils.append_img_kpts import append_img_kpts
 from utils.get_angle_uvector import get_angle_uvector
 from utils.get_error import get_error
 from utils.plot_image import plot_image
@@ -32,9 +34,7 @@ class NPNDrawParams(TypedDict):
 
 
 class NPNGenerator(Generator):
-    step: int = 50
-
-    def get_draw_params(self) -> NPNDrawParams:
+    def _get_draw_params(self) -> NPNDrawParams:
         D = self.step
 
         d01 = 3*D
@@ -60,16 +60,16 @@ class NPNGenerator(Generator):
         p8 = (p7 + u78*d78).astype(int)
         p9 = p8 + [0, d89]
 
-        e_p0 = [int(D*get_error(0.1)), int(D*get_error(0.1))]
-        e_p1 = [int(D*get_error(0.1)), -e_p0[1]]
-        e_p2 = [int(D*get_error(0.1)), int(D*get_error(0.1))]
-        e_p3 = [-e_p2[0], int(D*get_error(0.1))]
-        e_p4 = [int(D*get_error(0.1)), int(D*get_error(0.1))]
-        e_p5 = [int(D*get_error(0.1)), int(D*get_error(0.1))]
-        e_p6 = [-e_p5[0], int(D*get_error(0.1))]
-        e_p7 = [int(D*get_error(0.1)), int(D*get_error(0.1))]
-        e_p8 = [int(D*get_error(0.1)), int(D*get_error(0.1))]
-        e_p9 = [-e_p8[0], int(D*get_error(0.1))]
+        e_p0 = [int(D*get_error(0.2)), int(D*get_error(0.2))]
+        e_p1 = [int(D*get_error(0.2)), -e_p0[1]]
+        e_p2 = [int(D*get_error(0.2)), int(D*get_error(0.2))]
+        e_p3 = [-e_p2[0], int(D*get_error(0.2))]
+        e_p4 = [int(D*get_error(0.2)), int(D*get_error(0.2))]
+        e_p5 = [int(D*get_error(0.2)), int(D*get_error(0.2))]
+        e_p6 = [-e_p5[0], int(D*get_error(0.2))]
+        e_p7 = [int(D*get_error(0.2)), int(D*get_error(0.2))]
+        e_p8 = [int(D*get_error(0.2)), int(D*get_error(0.2))]
+        e_p9 = [-e_p8[0], int(D*get_error(0.2))]
 
         p0 += e_p0
         p1 += e_p1
@@ -128,7 +128,7 @@ class NPNGenerator(Generator):
 
         return params
 
-    def get_keypoints(self, params: NPNDrawParams):
+    def _get_keypoints(self, params: NPNDrawParams):
         p = params['points']
 
         base = p['p0']
@@ -166,11 +166,11 @@ class NPNGenerator(Generator):
         ah1 = tuple(ah1)
         ah2 = tuple(ah2)
 
-        draw.line([ah0, ah1], fill=(255, 255, 255), width=0)
-        draw.line([ah0, ah2], fill=(255, 255, 255), width=0)
-        draw.line([ah1, ah2], fill=(255, 255, 255), width=0)
+        draw.line([ah0, ah1], fill=(255, 255, 255), width=self.draw_width)
+        draw.line([ah0, ah2], fill=(255, 255, 255), width=self.draw_width)
+        draw.line([ah1, ah2], fill=(255, 255, 255), width=self.draw_width)
 
-    def draw_image(self, params: NPNDrawParams) -> PImage:
+    def _draw_image(self, params: NPNDrawParams) -> PImage:
         img = Image.new(mode='RGB', size=params['size'])
 
         draw = ImageDraw.Draw(img)
@@ -178,35 +178,29 @@ class NPNGenerator(Generator):
         p = params['points']
 
         draw.line([tuple(p['p0']), tuple(p['p1'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
         draw.line([tuple(p['p2']), tuple(p['p3'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
         draw.line([tuple(p['p4']), tuple(p['p5'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
         draw.line([tuple(p['p5']), tuple(p['p6'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
         draw.line([tuple(p['p7']), tuple(p['p8'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
         draw.line([tuple(p['p8']), tuple(p['p9'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
 
         self._draw_arrow_head(draw, p['p8'])
 
         return img
 
-    def generate(self) -> tuple[PImage, Keypoints]:
-        params = self.get_draw_params()
-
-        img = self.draw_image(params)
-
-        kpts = self.get_keypoints(params)
-
-        return img, kpts
-
 
 if __name__ == '__main__':
     generator = NPNGenerator()
 
-    img, kpts = generator.generate()
+    img, kpts = generator.generate(tgt_size=(200, 200))
 
-    plot_image(img, kpts)
+    img_kpts = append_img_kpts(img, kpts)
+
+    plt.imshow(img_kpts)
+    plt.show()

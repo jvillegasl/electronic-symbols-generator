@@ -5,9 +5,11 @@ from PIL.ImageDraw import ImageDraw as PImageDraw
 from PIL import Image, ImageDraw
 import numpy as np
 import numpy.typing as npt
+import matplotlib.pyplot as plt
 
 from models.generator import Generator
 from models.keypoints import Keypoints
+from utils.append_img_kpts import append_img_kpts
 from utils.get_error import get_error
 from utils.plot_image import plot_image
 
@@ -35,15 +37,13 @@ class VSourceDrawParams(TypedDict):
 
 
 class VSourceGenerator(Generator):
-    step: int = 50
-
-    def get_draw_params(self) -> VSourceDrawParams:
+    def _get_draw_params(self) -> VSourceDrawParams:
         D = self.step
 
-        d01 = 5*D
-        d12 = 4*D
+        d01 = 4*D
+        d12 = 3*D
         r2 = d12
-        d23 = 3*D
+        d23 = 2*D
         d24 = d23
         d15 = 2*d12
         d56 = d01
@@ -148,8 +148,8 @@ class VSourceGenerator(Generator):
         p_left = tuple(p_left)
         p_right = tuple(p_right)
 
-        draw.line([p_top, p_bottom], fill=(255, 255, 255), width=0)
-        draw.line([p_left, p_right], fill=(255, 255, 255), width=0)
+        draw.line([p_top, p_bottom], fill=(255, 255, 255), width=self.draw_width)
+        draw.line([p_left, p_right], fill=(255, 255, 255), width=self.draw_width)
 
     def _draw_negative(self, draw: PImageDraw, coord: npt.NDArray[np.int_]) -> None:
         D = self.step
@@ -166,9 +166,9 @@ class VSourceGenerator(Generator):
         p_left = tuple(p_left)
         p_right = tuple(p_right)
 
-        draw.line([p_left, p_right], fill=(255, 255, 255), width=0)
+        draw.line([p_left, p_right], fill=(255, 255, 255), width=self.draw_width)
 
-    def draw_image(self, params: VSourceDrawParams) -> PImage:
+    def _draw_image(self, params: VSourceDrawParams) -> PImage:
         img = Image.new(mode='RGB', size=params['size'])
 
         draw = ImageDraw.Draw(img)
@@ -176,20 +176,20 @@ class VSourceGenerator(Generator):
         p = params['points']
 
         draw.line([tuple(p['p0']), tuple(p['p1'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
 
-        draw.ellipse([tuple(p['p2_0']), tuple(p['p2_1']),],
-                     fill=None, outline=(255, 255, 255))
+        draw.ellipse([tuple(p['p2_0']), tuple(p['p2_1'])],
+                     fill=None, outline=(255, 255, 255), width=self.draw_width)
 
         draw.line([tuple(p['p5']), tuple(p['p6'])],
-                  fill=(255, 255, 255), width=0)
+                  fill=(255, 255, 255), width=self.draw_width)
 
         self._draw_positive(draw, p['p3'])
         self._draw_negative(draw, p['p4'])
 
         return img
 
-    def get_keypoints(self, params: VSourceDrawParams):
+    def _get_keypoints(self, params: VSourceDrawParams):
         p = params['points']
         m = params['magnitudes']
 
@@ -203,19 +203,13 @@ class VSourceGenerator(Generator):
 
         return kpts
 
-    def generate(self) -> tuple[PImage, Keypoints]:
-        params = self.get_draw_params()
-
-        img = self.draw_image(params)
-
-        kpts = self.get_keypoints(params)
-
-        return img, kpts
-
 
 if __name__ == '__main__':
     vsource_generator = VSourceGenerator()
 
     img, kpts = vsource_generator.generate()
 
-    plot_image(img, kpts)
+    img_kpts = append_img_kpts(img, kpts)
+
+    plt.imshow(img_kpts)
+    plt.show()
